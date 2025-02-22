@@ -1,0 +1,115 @@
+import java.util.*;
+
+interface Position<E> {
+    E getElement();
+}
+
+class Node<E> implements Position<E> {
+    private E element;
+    private Node<E> parent;
+    private Node<E> left;
+    private Node<E> right;
+
+    public Node(E element, Node<E> parent, Node<E> left, Node<E> right) {
+        this.element = element;
+        this.parent = parent;
+        this.left = left;
+        this.right = right;
+    }
+
+    public E getElement() { return element; }
+    public Node<E> getParent() { return parent; }
+    public Node<E> getLeft() { return left; }
+    public Node<E> getRight() { return right; }
+    public void setElement(E element) { this.element = element; }
+    public void setParent(Node<E> parent) { this.parent = parent; }
+    public void setLeft(Node<E> left) { this.left = left; }
+    public void setRight(Node<E> right) { this.right = right; }
+}
+
+interface Tree<E> {
+    Position<E> root();
+    Position<E> parent(Position<E> p);
+    Iterable<Position<E>> children(Position<E> p);
+    int size();
+    boolean isEmpty();
+}
+
+interface BinaryTree<E> extends Tree<E> {
+    Position<E> left(Position<E> p);
+    Position<E> right(Position<E> p);
+    Position<E> sibling(Position<E> p);
+}
+
+abstract class AbstractTree<E> implements Tree<E> {
+    public boolean isEmpty() { return size() == 0; }
+}
+
+abstract class AbstractBinaryTree<E> extends AbstractTree<E> implements BinaryTree<E> {
+    public Position<E> sibling(Position<E> p) {
+        Node<E> node = (Node<E>) p;
+        Node<E> parent = node.getParent();
+        if (parent == null) return null;
+        if (node == parent.getLeft()) return parent.getRight();
+        else return parent.getLeft();
+    }
+}
+
+class LinkedBinaryTree<E> extends AbstractBinaryTree<E> {
+    private Node<E> root = null;
+    private int size = 0;
+
+    public Position<E> root() { return root; }
+    public int size() { return size; }
+    public Position<E> left(Position<E> p) { return ((Node<E>) p).getLeft(); }
+    public Position<E> right(Position<E> p) { return ((Node<E>) p).getRight(); }
+    public Position<E> parent(Position<E> p) { return ((Node<E>) p).getParent(); }
+    
+    public Position<E> addRoot(E e) {
+        if (root != null) throw new IllegalStateException("Tree already has a root");
+        root = new Node<>(e, null, null, null);
+        size = 1;
+        return root;
+    }
+    
+    public Position<E> addLeft(Position<E> p, E e) {
+        Node<E> node = (Node<E>) p;
+        if (node.getLeft() != null) throw new IllegalStateException("Node already has a left child");
+        Node<E> child = new Node<>(e, node, null, null);
+        node.setLeft(child);
+        size++;
+        return child;
+    }
+    
+    public Position<E> addRight(Position<E> p, E e) {
+        Node<E> node = (Node<E>) p;
+        if (node.getRight() != null) throw new IllegalStateException("Node already has a right child");
+        Node<E> child = new Node<>(e, node, null, null);
+        node.setRight(child);
+        size++;
+        return child;
+    }
+    
+    public E set(Position<E> p, E e) {
+        Node<E> node = (Node<E>) p;
+        E old = node.getElement();
+        node.setElement(e);
+        return old;
+    }
+    
+    public E remove(Position<E> p) {
+        Node<E> node = (Node<E>) p;
+        if (node.getLeft() != null && node.getRight() != null)
+            throw new IllegalStateException("Cannot remove a node with two children");
+        Node<E> child = (node.getLeft() != null ? node.getLeft() : node.getRight());
+        if (child != null) child.setParent(node.getParent());
+        if (node == root) root = child;
+        else {
+            Node<E> parent = node.getParent();
+            if (node == parent.getLeft()) parent.setLeft(child);
+            else parent.setRight(child);
+        }
+        size--;
+        return node.getElement();
+    }
+}
